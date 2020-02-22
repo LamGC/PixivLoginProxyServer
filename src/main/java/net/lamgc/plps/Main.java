@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -20,12 +22,26 @@ public class Main {
         InputStream propInputStream;
         if(!propertiesFile.exists() || !propertiesFile.isFile()){
             propInputStream = ClassLoader.getSystemResourceAsStream("default.properties");
+            if(propInputStream == null){
+                log.error("初始配置文件创建失败!可能程序出现修改, 请重新下载或根据Readme创建配置文件." );
+                System.exit(1);
+                return;
+            }
+            try {
+                log.info("正在导出初始配置文件...");
+                Files.copy(propInputStream, propertiesFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                log.info("初始配置文件已导出, 请根据配置文件中的注释修改好配置文件.");
+                System.exit(0);
+            } catch (IOException e) {
+                log.error("初始配置文件导出失败!", e);
+            }
         } else {
             try {
                 propInputStream = new FileInputStream(propertiesFile);
             } catch (FileNotFoundException e) {
                 log.error("目录下配置文件读取失败!", e);
-                propInputStream = ClassLoader.getSystemResourceAsStream("default.properties");
+                System.exit(1);
+                return;
             }
         }
 
@@ -43,7 +59,7 @@ public class Main {
             }
             ProxyType proxyType = null;
             try {
-                proxyType = ProxyType.valueOf(properties.getProperty("proxy.forwardProxy.type").toLowerCase());
+                proxyType = ProxyType.valueOf(properties.getProperty("proxy.forwardProxy.type").toUpperCase());
             } catch (IllegalArgumentException e) {
                 log.warn("二级代理类型不支持, 当前仅支持Http/Socks4/Socks5代理服务器.");
             }
