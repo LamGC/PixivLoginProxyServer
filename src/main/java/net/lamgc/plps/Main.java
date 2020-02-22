@@ -77,7 +77,7 @@ public class Main {
         }
 
         Thread proxyServerStartThread = new Thread(() -> {
-            log.info("Pixiv登录代理服务端正在启动中...");
+            log.info("Pixiv登录代理服务端启动中...");
             proxyServer.start(Integer.parseInt(properties.getProperty("proxy.loginProxyPort")));
             log.info("Pixiv登录代理服务端已关闭.");
         });
@@ -121,18 +121,9 @@ public class Main {
             log.info("CookieStore保存完成.(Path: {})", storeFile.getAbsolutePath());
         } catch (IOException e) {
             log.error("CookieStore保存失败!", e);
-        }
-
-        try {
-            if(!propertiesFile.exists() && !propertiesFile.createNewFile()){
-                log.error("配置文件保存失败!(文件创建失败)");
-                System.exit(1);
-            }
-            properties.store(new FileOutputStream(propertiesFile), "PixivLoginProxyServer setting");
-        } catch (IOException e) {
-            log.error("配置文件保存失败!", e);
             System.exit(1);
         }
+
     }
 
 }
