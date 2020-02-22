@@ -25,6 +25,25 @@ proxy.cookieStorePath=cookies.store
 使用浏览器登录Pixiv时推荐使用浏览器隐身模式登录，可以不需要退出浏览器已登录的Pixiv，更方便的登录Pixiv。  
 登录后输入`close`回车即可，如上次存在导出的CookieStore，则按情况选择是否覆盖。
 
+#### 安全问题：CA证书 ####
+如担心CA证书的导入出现安全问题，可在完成Pixiv登录并导出CookieStore后从证书库删除CA证书：
+##### (1) 导入时选择存储位置为“本地计算机” #####
+**以管理员身份运行**`certmgr.msc`，  
+左侧依次进入“受信任的根证书颁发机构 -> 证书”，右侧列表找到证书颁发者为“ProxyeeRoot”的证书，并将其删除后即可。
+
+##### (2) 导入时选择存储位置为“当前用户” #####
+直接使用运行打开`certmgr.msc`（即不使用管理员身份运行），  
+左侧依次进入“受信任的根证书颁发机构 -> 证书”，右侧列表找到证书颁发者为“ProxyeeRoot”的证书，并将其删除后即可。
+
+##### (3) Firefox浏览器 #####
+> 以`Firefox 73`为例  
+
+在Firefox浏览器中打开`about:preferences#advanced`，转到**隐私和安全**，  
+找到最下面的`证书`一块，点击**查看证书**，在弹出来的证书管理器中，进入证书颁发机构，  
+找到颁发名为**lee**的`ProxyeeRoot`证书，点击`删除或不信任(D)...`，并在确认框中确认删除即可。
+
+
+
 ### 其他程序导入PixivLoginProxyServer导出的CookieStore ###
 PixivLoginProxyServer所采用的CookieStore来自`org.apache.http.client.CookieStore`，  
 导入时仅需要使用`ObjectInputStream`读取后转换即可。
