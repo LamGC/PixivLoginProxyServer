@@ -42,8 +42,6 @@ proxy.cookieStorePath=cookies.store
 找到最下面的`证书`一块，点击**查看证书**，在弹出来的证书管理器中，进入证书颁发机构，  
 找到颁发名为**lee**的`ProxyeeRoot`证书，点击`删除或不信任(D)...`，并在确认框中确认删除即可。
 
-
-
 ### 其他程序导入PixivLoginProxyServer导出的CookieStore ###
 PixivLoginProxyServer所采用的CookieStore来自`org.apache.http.client.CookieStore`，  
 导入时仅需要使用`ObjectInputStream`读取后转换即可。
