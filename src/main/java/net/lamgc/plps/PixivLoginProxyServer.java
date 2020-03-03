@@ -5,6 +5,7 @@ import com.github.monkeywie.proxyee.intercept.HttpProxyInterceptPipeline;
 import com.github.monkeywie.proxyee.intercept.common.CertDownIntercept;
 import com.github.monkeywie.proxyee.intercept.common.FullResponseIntercept;
 import com.github.monkeywie.proxyee.proxy.ProxyConfig;
+import com.github.monkeywie.proxyee.server.HttpProxyCACertFactory;
 import com.github.monkeywie.proxyee.server.HttpProxyServer;
 import com.github.monkeywie.proxyee.server.HttpProxyServerConfig;
 import com.google.gson.Gson;
@@ -13,6 +14,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -24,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 由用户介入, 让用户手动登录Pixiv的方式, 再通过代理服务器捕获Cookie来绕过Google人机验证
@@ -39,17 +42,22 @@ public class PixivLoginProxyServer {
 
     private final CookieStore cookieStore = new BasicCookieStore();
 
-    public PixivLoginProxyServer(){
+    public PixivLoginProxyServer() {
         this(null);
     }
 
-    public PixivLoginProxyServer(ProxyConfig proxyConfig){
+    public PixivLoginProxyServer(ProxyConfig proxyConfig) {
+        this(proxyConfig, null);
+    }
+
+    public PixivLoginProxyServer(ProxyConfig proxyConfig, HttpProxyCACertFactory caCertFactory) {
         HttpProxyServerConfig config = new HttpProxyServerConfig();
         config.setHandleSsl(true);
         this.proxyServer = new HttpProxyServer();
         this.proxyServer
                 .serverConfig(config)
                 .proxyConfig(proxyConfig)
+                .caCertFactory(caCertFactory)
                 .proxyInterceptInitializer(new HttpProxyInterceptInitializer(){
                     @Override
                     public void init(HttpProxyInterceptPipeline pipeline) {
@@ -68,14 +76,18 @@ public class PixivLoginProxyServer {
 
                                 log.info("正在导出Response Cookie...(Header Name: " + HttpHeaderNames.SET_COOKIE + ")");
                                 List<String> responseCookies = fullHttpResponse.headers().getAll(HttpHeaderNames.SET_COOKIE);
+                                AtomicInteger responseCookieCount = new AtomicInteger();
                                 responseCookies.forEach(value -> {
                                     log.debug("Response Cookie: " + value);
                                     cookieStore.addCookie(parseRawCookie(value));
+                                    responseCookieCount.incrementAndGet();
                                 });
-                                log.info("Cookie导出完成");
+                                log.info("Cookie导出完成(已导出 " + responseCookieCount.get() + " 条Cookie)");
 
                                 //登录检查
-                                if(url.contains("accounts.pixiv.net/api/login")){
+                                // 如果用户在登录界面登录成功后反复刷新，会出现登录返回不对但已经成功登录的情况，
+                                // 故此处在登录完成后不再判断是否成功登录
+                                if(!isLogin() && url.contains("accounts.pixiv.net/api/login")){
                                     log.info("正在检查登录结果...");
                                     //拷贝一份以防止对原响应造成影响
                                     FullHttpResponse copyResponse = fullHttpResponse.copy();
@@ -84,6 +96,7 @@ public class PixivLoginProxyServer {
                                     copyResponse.content().readBytes(buffer);
                                     contentStr = new String(buffer.array(), StandardCharsets.UTF_8);
                                     log.debug("Login Result: " + contentStr);
+
                                     JsonObject resultObject = new Gson().fromJson(contentStr, JsonObject.class);
                                     //只要error:false, body存在(应该是会存在的)且success字段存在, 即为登录成功
                                     login = !resultObject.get("error").getAsBoolean() &&
@@ -91,6 +104,10 @@ public class PixivLoginProxyServer {
                                             resultObject.get("body").getAsJsonObject().has("success");
                                     log.info("登录状态确认: " + (login ? "登录成功" : "登录失败"));
 
+                                    //{"error":false,"message":"","body":{"validation_errors":{"etc":"\u0050\u0069\u0078\u0069\u0076\u767b\u5f55\u4ee3\u7406\u5668\u786e\u8ba4\u767b\u5f55\u6210\u529f"}}}
+                                    fullHttpResponse.content().clear().writeBytes(
+                                            ("{\"error\":false,\"message\":\"\",\"body\":{\"validation_errors\":{\"etc\":\"" + StringEscapeUtils.escapeJava("Pixiv登录代理器已确认登录") + "\"}}}")
+                                                    .getBytes(StandardCharsets.UTF_8));
                                 }
                             }
 
