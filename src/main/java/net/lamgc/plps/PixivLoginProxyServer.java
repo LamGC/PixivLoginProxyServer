@@ -61,7 +61,20 @@ public class PixivLoginProxyServer {
                 .proxyInterceptInitializer(new HttpProxyInterceptInitializer(){
                     @Override
                     public void init(HttpProxyInterceptPipeline pipeline) {
-                        pipeline.addLast(new CertDownIntercept());
+                        if(caCertFactory != null) {
+                            log.debug("CertFactory存在，获取CA证书...");
+                            try {
+                                pipeline.addLast(new CaCertDownIntercept(caCertFactory.getCACert()));
+                                log.debug("CaCertDownIntercept已使用CertFactory中的CA证书.");
+                            } catch(Exception e) {
+                                log.warn("从CertFactory获取CA证书时发生异常，将使用Proxyee自带证书.", e);
+                                pipeline.addLast(new CertDownIntercept());
+                            }
+                        } else {
+                            log.debug("CertFactory不存在, 使用Proxyee自带的CA证书.");
+                            pipeline.addLast(new CertDownIntercept());
+                        }
+
                         pipeline.addLast(new FullResponseIntercept() {
                             @Override
                             public boolean match(HttpRequest httpRequest, HttpResponse httpResponse, HttpProxyInterceptPipeline httpProxyInterceptPipeline) {
@@ -104,9 +117,9 @@ public class PixivLoginProxyServer {
                                             resultObject.get("body").getAsJsonObject().has("success");
                                     log.info("登录状态确认: " + (login ? "登录成功" : "登录失败"));
 
-                                    //{"error":false,"message":"","body":{"validation_errors":{"etc":"\u0050\u0069\u0078\u0069\u0076\u767b\u5f55\u4ee3\u7406\u5668\u786e\u8ba4\u767b\u5f55\u6210\u529f"}}}
                                     fullHttpResponse.content().clear().writeBytes(
-                                            ("{\"error\":false,\"message\":\"\",\"body\":{\"validation_errors\":{\"etc\":\"" + StringEscapeUtils.escapeJava("Pixiv登录代理器已确认登录") + "\"}}}")
+                                            ("{\"error\":false,\"message\":\"\",\"body\":{\"validation_errors\":{\"etc\":\"" +
+                                                    StringEscapeUtils.escapeJava("Pixiv登录代理器已确认登录") + "\"}}}")
                                                     .getBytes(StandardCharsets.UTF_8));
                                 }
                             }

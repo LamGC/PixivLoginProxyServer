@@ -1,5 +1,6 @@
 package net.lamgc.plps;
 
+import com.github.monkeywie.proxyee.crt.CertUtil;
 import com.github.monkeywie.proxyee.proxy.ProxyConfig;
 import com.github.monkeywie.proxyee.proxy.ProxyType;
 import com.github.monkeywie.proxyee.server.HttpProxyCACertFactory;
@@ -8,10 +9,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.KeyPair;
 import java.security.cert.CertificateException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
@@ -28,6 +34,7 @@ public class Main {
     public static void main(String[] args) {
         File propertiesFile = new File("./plps.properties");
         InputStream propInputStream;
+        initCaCert();
         if(!propertiesFile.exists() || !propertiesFile.isFile()){
             propInputStream = ClassLoader.getSystemResourceAsStream("default.properties");
             if(propInputStream == null){
@@ -148,5 +155,31 @@ public class Main {
         }
 
     }
+
+    private static void initCaCert() {
+        File certFile = new File("./ca.crt");
+        File privateKeyFile = new File("./ca_private.der");
+        if(!certFile.exists() || !privateKeyFile.exists()) {
+            certFile.delete();
+            privateKeyFile.delete();
+
+            try {
+                KeyPair keyPair = CertUtil.genKeyPair();
+                Files.write(Paths.get(certFile.toURI()),
+                        CertUtil.genCACert(
+                                "C=CN, ST=GD, L=SZ, O=lee, OU=study, CN=Proxyee",
+                                new Date(),
+                                new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3650)),
+                                keyPair)
+                                .getEncoded());
+                Files.write(privateKeyFile.toPath(),
+                        new PKCS8EncodedKeySpec(keyPair.getPrivate().getEncoded()).getEncoded());
+            } catch (Exception e) {
+                log.error("创建CA证书时发生异常", e);
+            }
+        }
+    }
+
+
 
 }
