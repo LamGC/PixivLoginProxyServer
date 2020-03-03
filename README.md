@@ -29,18 +29,18 @@ proxy.cookieStorePath=cookies.store
 如担心CA证书的导入出现安全问题，可在完成Pixiv登录并导出CookieStore后从证书库删除CA证书：
 ##### (1) 导入时选择存储位置为“本地计算机” #####
 **以管理员身份运行**`certmgr.msc`，  
-左侧依次进入“受信任的根证书颁发机构 -> 证书”，右侧列表找到证书颁发者为“ProxyeeRoot”的证书，并将其删除后即可。
+左侧依次进入“受信任的根证书颁发机构 -> 证书”，右侧列表找到证书颁发者为“Proxyee”的证书，并将其删除后即可。
 
 ##### (2) 导入时选择存储位置为“当前用户” #####
-直接使用运行打开`certmgr.msc`（即不使用管理员身份运行），  
-左侧依次进入“受信任的根证书颁发机构 -> 证书”，右侧列表找到证书颁发者为“ProxyeeRoot”的证书，并将其删除后即可。
+**直接使用运行打开**`certmgr.msc`（即不使用管理员身份运行），  
+左侧依次进入“受信任的根证书颁发机构 -> 证书”，右侧列表找到证书颁发者为“Proxyee”的证书，并将其删除后即可。
 
 ##### (3) Firefox浏览器 #####
 > 以`Firefox 73`为例  
 
 在Firefox浏览器中打开`about:preferences#advanced`，转到**隐私和安全**，  
 找到最下面的`证书`一块，点击**查看证书**，在弹出来的证书管理器中，进入证书颁发机构，  
-找到颁发名为**lee**的`ProxyeeRoot`证书，点击`删除或不信任(D)...`，并在确认框中确认删除即可。
+找到颁发名为**lee**的`Proxyee`证书，点击`删除或不信任(D)...`，并在确认框中确认删除即可。
 
 ### 其他程序导入PixivLoginProxyServer导出的CookieStore ###
 PixivLoginProxyServer所采用的CookieStore来自`org.apache.http.client.CookieStore`，  
