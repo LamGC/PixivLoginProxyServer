@@ -2,12 +2,14 @@ package net.lamgc.plps;
 
 import com.github.monkeywie.proxyee.proxy.ProxyConfig;
 import com.github.monkeywie.proxyee.proxy.ProxyType;
+import com.github.monkeywie.proxyee.server.HttpProxyCACertFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.cert.CertificateException;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -17,6 +19,12 @@ public class Main {
 
     private final static Properties properties = new Properties();
 
+    /**
+     * PixivLoginProxyServer独立运行主方法.
+     * 请不要通过本方法使用PixivLoginProxyServer，本方法将会在执行完毕时直接退出({@link System#exit(int)})程序
+     * @deprecated 如需使用PixivLoginProxyServer请查看 {@link PixivLoginProxyServer}
+     */
+    @Deprecated
     public static void main(String[] args) {
         File propertiesFile = new File("./plps.properties");
         InputStream propInputStream;
@@ -51,6 +59,8 @@ public class Main {
             log.error("读取配置文件失败!", e);
         }
         PixivLoginProxyServer proxyServer;
+        ProxyConfig forwardProxyConfig = null;
+        HttpProxyCACertFactory caCertFactory = null;
         if(properties.containsKey("proxy.forwardProxy.host")){
             if(!properties.containsKey("proxy.forwardProxy.port")){
                 log.warn("二级代理存在但配置不完整(缺少port), 将不会启用二级代理.");
@@ -64,17 +74,30 @@ public class Main {
                 log.warn("二级代理类型不支持, 当前仅支持Http/Socks4/Socks5代理服务器.");
             }
             if(proxyType != null){
-                proxyServer = new PixivLoginProxyServer(
-                        new ProxyConfig(proxyType,
-                                properties.getProperty("proxy.forwardProxy.host"),
-                                Integer.parseInt(properties.getProperty("proxy.forwardProxy.port"))));
-            } else {
-                proxyServer = new PixivLoginProxyServer();
+                forwardProxyConfig = new ProxyConfig(proxyType,
+                        properties.getProperty("proxy.forwardProxy.host").trim(),
+                        Integer.parseInt(properties.getProperty("proxy.forwardProxy.port").trim()));
             }
         } else {
             log.debug("配置项未找到二级代理相关设置, 不启用二级代理");
-            proxyServer = new PixivLoginProxyServer();
         }
+
+        //载入CA证书(如果有)
+        File caCertFile = new File("./ca.crt");
+        File caPrivateKeyFile = new File("./ca_private.der");
+        if(caCertFile.exists() && caPrivateKeyFile.exists()) {
+            try(
+                    FileInputStream caCertInput = new FileInputStream(caCertFile);
+                    FileInputStream caPriKeyInput = new FileInputStream(caPrivateKeyFile)
+            ) {
+                caCertFactory = new InputStreamCertFactory(caCertInput, caPriKeyInput);
+            } catch (IOException | CertificateException e) {
+                log.error("读取外部CA证书失败", e);
+            }
+        }
+
+
+        proxyServer = new PixivLoginProxyServer(forwardProxyConfig, caCertFactory);
 
         Thread proxyServerStartThread = new Thread(() -> {
             log.info("Pixiv登录代理服务端启动中...");
@@ -99,9 +122,9 @@ public class Main {
         log.info("正在保存CookieStore...");
         File storeFile = new File(properties.getProperty("proxy.cookieStorePath", "./cookies.store"));
         if(storeFile.exists()){
-            log.warn("指定的保存位置({})已存在文件, 是否覆盖?[y/n]", storeFile.getAbsolutePath());
+            log.warn("指定的保存位置({})已存在文件, 是否覆盖?[y/n](或任意输入取消)", storeFile.getAbsolutePath());
             String inputLine = commandScanner.nextLine();
-            if(inputLine.equalsIgnoreCase("n") || inputLine.equalsIgnoreCase("no")){
+            if(!inputLine.equalsIgnoreCase("y") && !inputLine.equalsIgnoreCase("yes")){
                 log.warn("操作已终止.");
                 System.exit(0);
             }
