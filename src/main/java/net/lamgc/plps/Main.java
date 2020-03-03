@@ -68,10 +68,8 @@ public class Main {
         PixivLoginProxyServer proxyServer;
         ProxyConfig forwardProxyConfig = null;
         HttpProxyCACertFactory caCertFactory = null;
-        if(properties.containsKey("proxy.forwardProxy.host")){
-            if(!properties.containsKey("proxy.forwardProxy.port")){
-                log.warn("二级代理存在但配置不完整(缺少port), 将不会启用二级代理.");
-            } else if(!properties.containsKey("proxy.forwardProxy.type")) {
+        if(properties.containsKey("proxy.forwardProxy.host") && !properties.getProperty("proxy.forwardProxy.host").isEmpty()){
+            if(!properties.containsKey("proxy.forwardProxy.type") && !properties.getProperty("proxy.forwardProxy.type").isEmpty()) {
                 log.warn("二级代理存在但配置不完整(缺少type), 将不会启用二级代理.");
             }
             ProxyType proxyType = null;
@@ -81,9 +79,11 @@ public class Main {
                 log.warn("二级代理类型不支持, 当前仅支持Http/Socks4/Socks5代理服务器.");
             }
             if(proxyType != null){
-                forwardProxyConfig = new ProxyConfig(proxyType,
-                        properties.getProperty("proxy.forwardProxy.host").trim(),
-                        Integer.parseInt(properties.getProperty("proxy.forwardProxy.port").trim()));
+                String forwardProxyHost = properties.getProperty("proxy.forwardProxy.host").trim();
+                String forwardProxyPortStr = properties.getProperty("proxy.forwardProxy.port", "1080").trim();
+                int forwardProxyPort = forwardProxyPortStr.isEmpty() ? 1080 : Integer.parseInt(forwardProxyPortStr);
+                log.info("已启用前置代理 {}://{}:{}", proxyType.toString(), forwardProxyHost, forwardProxyPort);
+                forwardProxyConfig = new ProxyConfig(proxyType, forwardProxyHost, forwardProxyPort);
             }
         } else {
             log.debug("配置项未找到二级代理相关设置, 不启用二级代理");
