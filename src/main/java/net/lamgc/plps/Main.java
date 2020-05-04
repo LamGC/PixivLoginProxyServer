@@ -81,7 +81,7 @@ public class Main {
             if(proxyType != null){
                 String forwardProxyHost = properties.getProperty("proxy.forwardProxy.host").trim();
                 String forwardProxyPortStr = properties.getProperty("proxy.forwardProxy.port", "1080").trim();
-                int forwardProxyPort = forwardProxyPortStr.isEmpty() ? 1080 : Integer.parseInt(forwardProxyPortStr);
+                int forwardProxyPort = forwardProxyPortStr.trim().isEmpty() ? 1080 : Integer.parseInt(forwardProxyPortStr);
                 log.info("已启用前置代理 {}://{}:{}", proxyType.toString(), forwardProxyHost, forwardProxyPort);
                 forwardProxyConfig = new ProxyConfig(proxyType, forwardProxyHost, forwardProxyPort);
             }
