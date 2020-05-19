@@ -27,6 +27,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 
 /**
  * 由用户介入, 让用户手动登录Pixiv的方式, 再通过代理服务器捕获Cookie来绕过Google人机验证
@@ -42,6 +44,8 @@ public class PixivLoginProxyServer {
 
     private final CookieStore cookieStore = new BasicCookieStore();
 
+    private final AtomicReference<BooleanSupplier> loginEventHandler = new AtomicReference();
+
     public PixivLoginProxyServer() {
         this(null);
     }
@@ -50,6 +54,11 @@ public class PixivLoginProxyServer {
         this(proxyConfig, null);
     }
 
+    /**
+     * 构造一个Pixiv登录会话代理服务端
+     * @param proxyConfig 前置代理设置, 如为null则无前置代理
+     * @param caCertFactory 自定义CA证书工厂对象, 如为null, 则使用Proxyee自带CA证书
+     */
     public PixivLoginProxyServer(ProxyConfig proxyConfig, HttpProxyCACertFactory caCertFactory) {
         HttpProxyServerConfig config = new HttpProxyServerConfig();
         config.setHandleSsl(true);
@@ -121,6 +130,16 @@ public class PixivLoginProxyServer {
                                             ("{\"error\":false,\"message\":\"\",\"body\":{\"validation_errors\":{\"etc\":\"" +
                                                     StringEscapeUtils.escapeJava("Pixiv登录代理器已确认登录") + "\"}}}")
                                                     .getBytes(StandardCharsets.UTF_8));
+
+                                    BooleanSupplier handler = loginEventHandler.get();
+                                    if(handler != null) {
+                                        boolean close = false;
+                                        try {
+                                            close = handler.getAsBoolean();
+                                        } catch(Throwable e) {
+                                            log.error("执行 LoginEventHandler 时发生异常", e);
+                                        }
+                                    }
                                 }
                             }
 
@@ -148,10 +167,20 @@ public class PixivLoginProxyServer {
                 });
     }
 
+    /**
+     * 启动代理服务端
+     * @param port 代理端口号
+     */
     public void start(int port){
+        if(port > 65535 || port < 0) {
+            throw new IllegalArgumentException("Invalid port: " + port);
+        }
         this.proxyServer.start(port);
     }
 
+    /**
+     * 关闭代理服务端
+     */
     public void close(){
         this.proxyServer.close();
     }
@@ -162,6 +191,13 @@ public class PixivLoginProxyServer {
      */
     public boolean isLogin(){
         return login;
+    }
+
+    /**
+     * 设置登录事件处理
+     */
+    public void setLoginEventHandler(BooleanSupplier handler) {
+        loginEventHandler.set(handler);
     }
 
     /**
