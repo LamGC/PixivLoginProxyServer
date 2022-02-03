@@ -44,7 +44,7 @@ public class PixivLoginProxyServer {
 
     private final CookieStore cookieStore = new BasicCookieStore();
 
-    private final AtomicReference<BooleanSupplier> loginEventHandler = new AtomicReference();
+    private final AtomicReference<BooleanSupplier> loginEventHandler = new AtomicReference<>();
 
     public PixivLoginProxyServer() {
         this(null);
@@ -143,22 +143,26 @@ public class PixivLoginProxyServer {
                                 }
                             }
 
-                            protected BasicClientCookie parseRawCookie(String rawCookie) {
+                            private BasicClientCookie parseRawCookie(String rawCookie) {
                                 List<HttpCookie> cookies = HttpCookie.parse(rawCookie);
-                                if (cookies.size() < 1)
+                                if (cookies.size() < 1) {
                                     return null;
+                                }
                                 HttpCookie httpCookie = cookies.get(0);
                                 BasicClientCookie cookie = new BasicClientCookie(httpCookie.getName(), httpCookie.getValue());
                                 if (httpCookie.getMaxAge() >= 0) {
                                     Date expiryDate = new Date(System.currentTimeMillis() + httpCookie.getMaxAge() * 1000);
                                     cookie.setExpiryDate(expiryDate);
                                 }
-                                if (httpCookie.getDomain() != null)
+                                if (httpCookie.getDomain() != null) {
                                     cookie.setDomain(httpCookie.getDomain());
-                                if (httpCookie.getPath() != null)
+                                }
+                                if (httpCookie.getPath() != null) {
                                     cookie.setPath(httpCookie.getPath());
-                                if (httpCookie.getComment() != null)
+                                }
+                                if (httpCookie.getComment() != null) {
                                     cookie.setComment(httpCookie.getComment());
+                                }
                                 cookie.setSecure(httpCookie.getSecure());
                                 return cookie;
                             }
