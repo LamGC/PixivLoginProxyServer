@@ -92,7 +92,7 @@ public class PixivLoginProxyServer {
                             }
 
                             @Override
-                            public void handelResponse(HttpRequest httpRequest, FullHttpResponse fullHttpResponse, HttpProxyInterceptPipeline httpProxyInterceptPipeline) {
+                            public void handleResponse(HttpRequest httpRequest, FullHttpResponse fullHttpResponse, HttpProxyInterceptPipeline httpProxyInterceptPipeline) {
                                 String url = httpRequest.headers().get(HttpHeaderNames.HOST) + httpRequest.uri();
                                 log.info("拦截到Pixiv请求, URL: " + url);
 
