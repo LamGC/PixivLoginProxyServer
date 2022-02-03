@@ -122,8 +122,7 @@ public class PixivLoginProxyServer {
                                     JsonObject resultObject = new Gson().fromJson(contentStr, JsonObject.class);
                                     //只要error:false, body存在(应该是会存在的)且success字段存在, 即为登录成功
                                     login = !resultObject.get("error").getAsBoolean() &&
-                                            resultObject.has("body") &&
-                                            resultObject.get("body").getAsJsonObject().has("success");
+                                            resultObject.getAsJsonObject("body").has("success");
                                     log.info("登录状态确认: " + (login ? "登录成功" : "登录失败"));
 
                                     fullHttpResponse.content().clear().writeBytes(
@@ -132,7 +131,7 @@ public class PixivLoginProxyServer {
                                                     .getBytes(StandardCharsets.UTF_8));
 
                                     BooleanSupplier handler = loginEventHandler.get();
-                                    if(handler != null) {
+                                    if (handler != null && login) {
                                         boolean close = false;
                                         try {
                                             close = handler.getAsBoolean();

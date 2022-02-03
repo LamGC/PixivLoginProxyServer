@@ -68,7 +68,7 @@ public class Main {
         ProxyConfig forwardProxyConfig = null;
         HttpProxyCACertFactory caCertFactory = null;
         if(properties.containsKey("proxy.forwardProxy.host") && !properties.getProperty("proxy.forwardProxy.host").isEmpty()){
-            if(!properties.containsKey("proxy.forwardProxy.type") || !properties.getProperty("proxy.forwardProxy.type").isEmpty()) {
+            if (!properties.containsKey("proxy.forwardProxy.type") || properties.getProperty("proxy.forwardProxy.type").isEmpty()) {
                 log.warn("二级代理存在但配置不完整(缺少type), 将不会启用二级代理.");
             } else {
                 ProxyType proxyType;
@@ -92,8 +92,8 @@ public class Main {
         File caCertFile = new File("./ca.crt");
         File caPrivateKeyFile = new File("./ca_private.der");
         if(caCertFile.exists() && caPrivateKeyFile.exists()) {
-            try(FileInputStream caCertInput = new FileInputStream(caCertFile);
-                FileInputStream caPriKeyInput = new FileInputStream(caPrivateKeyFile)
+            try (FileInputStream caCertInput = new FileInputStream(caCertFile);
+                 FileInputStream caPriKeyInput = new FileInputStream(caPrivateKeyFile)
             ) {
                 caCertFactory = new InputStreamCertFactory(caCertInput, caPriKeyInput);
             } catch (IOException | CertificateException e) {
@@ -102,7 +102,8 @@ public class Main {
         }
 
         final PixivLoginProxyServer proxyServer = new PixivLoginProxyServer(forwardProxyConfig, caCertFactory);
-        proxyServer.setLoginEventHandler(new AutoCloseHandler());
+        // Scanner 内部屏蔽了中断, 导致没办法停下主线程, 后续有空再改.
+        // proxyServer.setLoginEventHandler(new AutoCloseHandler());
         Thread proxyServerStartThread = new Thread(() -> {
             log.info("Pixiv登录代理服务端启动中...");
             proxyServer.start(Integer.parseInt(properties.getProperty("proxy.loginProxyPort")));
@@ -112,7 +113,7 @@ public class Main {
         proxyServerStartThread.start();
 
         Scanner commandScanner = new Scanner(System.in);
-        for(;;){
+        for (; ; ) {
             String inputLine = commandScanner.nextLine();
             if ("close".equalsIgnoreCase(inputLine)) {
                 log.info("正在关闭Pixiv登录代理服务端...");
@@ -128,15 +129,19 @@ public class Main {
         if(storeFile.exists()){
             log.warn("指定的保存位置({})已存在文件, 是否覆盖?[y/n](或任意输入取消)", storeFile.getAbsolutePath());
             String inputLine = commandScanner.nextLine();
-            if(!inputLine.equalsIgnoreCase("y") && !inputLine.equalsIgnoreCase("yes")){
+            if (!inputLine.equalsIgnoreCase("y") && !inputLine.equalsIgnoreCase("yes")) {
                 log.warn("操作已终止.");
                 System.exit(0);
             }
         }
 
+        saveCookieStore(storeFile, proxyServer);
+    }
+
+    private static void saveCookieStore(File storeFile, PixivLoginProxyServer proxyServer) {
         try {
             storeFile.delete();
-            if(!storeFile.createNewFile()){
+            if (!storeFile.createNewFile()) {
                 log.error("文件创建失败!(Path: {})", storeFile.getAbsolutePath());
                 System.exit(1);
             }
@@ -150,13 +155,12 @@ public class Main {
             log.error("CookieStore保存失败!", e);
             System.exit(1);
         }
-
     }
 
     private static void initCaCert() {
         File certFile = new File("./ca.crt");
         File privateKeyFile = new File("./ca_private.der");
-        if(!certFile.exists() || !privateKeyFile.exists()) {
+        if (!certFile.exists() || !privateKeyFile.exists()) {
             certFile.delete();
             privateKeyFile.delete();
 
