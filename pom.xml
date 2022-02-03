@@ -6,7 +6,7 @@
 
     <groupId>net.lamgc</groupId>
     <artifactId>PixivLoginProxyServer</artifactId>
-    <version>1.1.2</version>
+    <version>1.2.0-rc1</version>
     <build>
         <plugins>
             <plugin>
