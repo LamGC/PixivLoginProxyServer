@@ -79,7 +79,7 @@ public class Main {
                     String forwardProxyPortStr = properties.getProperty("proxy.forwardProxy.port", "1080");
                     int forwardProxyPort = forwardProxyPortStr.isEmpty() ? 1080 : Integer.parseInt(forwardProxyPortStr);
                     forwardProxyConfig = new ProxyConfig(proxyType, forwardProxyHost, forwardProxyPort);
-                    log.info("已启用前置代理: {}", forwardProxyConfig.toString());
+                    log.info("已启用前置代理: {}", forwardProxyConfig);
                 } catch (IllegalArgumentException e) {
                     log.warn("二级代理类型不支持, 当前仅支持Http/Socks4/Socks5代理服务器.");
                 }
@@ -114,7 +114,7 @@ public class Main {
         Scanner commandScanner = new Scanner(System.in);
         for(;;){
             String inputLine = commandScanner.nextLine();
-            if(inputLine.equalsIgnoreCase("close")){
+            if ("close".equalsIgnoreCase(inputLine)) {
                 log.info("正在关闭Pixiv登录代理服务端...");
                 proxyServer.close();
                 break;
