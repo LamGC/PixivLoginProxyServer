@@ -102,7 +102,7 @@ public class Main {
         }
 
         final PixivLoginProxyServer proxyServer = new PixivLoginProxyServer(forwardProxyConfig, caCertFactory);
-
+        proxyServer.setLoginEventHandler(new AutoCloseHandler());
         Thread proxyServerStartThread = new Thread(() -> {
             log.info("Pixiv登录代理服务端启动中...");
             proxyServer.start(Integer.parseInt(properties.getProperty("proxy.loginProxyPort")));

@@ -136,8 +136,12 @@ public class PixivLoginProxyServer {
                                         boolean close = false;
                                         try {
                                             close = handler.getAsBoolean();
-                                        } catch(Throwable e) {
+                                        } catch (Throwable e) {
                                             log.error("执行 LoginEventHandler 时发生异常", e);
+                                        }
+                                        if (close) {
+                                            log.info("LoginEventHandler 已确认可关闭服务端, 服务端正在关闭...");
+                                            close();
                                         }
                                     }
                                 }
@@ -198,7 +202,9 @@ public class PixivLoginProxyServer {
     }
 
     /**
-     * 设置登录事件处理
+     * 设置登录事件处理.
+     *
+     * <p> 当 BooleanSupplier 返回 {@code true} 时, 表示服务端可立即关闭, 否则服务端将保持开启直至 {@link #close()} 方法被调用.
      */
     public void setLoginEventHandler(BooleanSupplier handler) {
         loginEventHandler.set(handler);
