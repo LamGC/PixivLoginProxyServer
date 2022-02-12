@@ -60,17 +60,17 @@
         <dependency>
             <groupId>com.github.monkeywie</groupId>
             <artifactId>proxyee</artifactId>
-            <version>1.5.4</version>
+            <version>1.5.5</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.33</version>
+            <version>1.7.35</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.33</version>
+            <version>1.7.35</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
